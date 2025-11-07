@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pahlawan Pembasmi Sampah By MNA</title>
+    <style>
+ :root{
+  --bg1: #00ff1188;
+  --bg2: #33dd60;
+  --neon: #00ff3c;
+  --accent: #00ffd5;
+  --muted: rgba(255,255,255,0.12);
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;font-family:'Press Start 2P',monospace;background: radial-gradient(circle at 20% 10%, #002b01 0%, #011000 50%, #000 100%);color:#fff}
+#wrapper{position:relative;margin:18px auto;width:1080px;max-width:96vw;}
+canvas{display:block;width:100%;height:auto;border-radius:10px;box-shadow:0 10px 40px rgba(0,0,0,0.6);background:linear-gradient(180deg, rgba(77, 255, 127, 0.04), rgba(0,0,0,0.1));}
+
+/* HUD */
+#hud{position:absolute;left:12px;right:12px;top:12px;display:flex;justify-content:space-between;align-items:center;pointer-events:none}
+.hud-row{background:linear-gradient(90deg, rgba(255,255,255,0.02), rgba(0,0,0,0.3));padding:8px 10px;border-radius:8px;margin:3px 0;border:2px solid rgba(77, 255, 127, 0.12);font-size:13px;pointer-events:auto}
+#title{font-size:14px;text-shadow:0 2px 8px rgba(77, 255, 113, 0.2);pointer-events:none}
+#controls{position:absolute;left:12px;bottom:12px;background:rgba(0,0,0,0.45);padding:8px;border-radius:8px;border:2px solid rgba(255,255,255,0.03);font-size:12px;}
+
+/* modal */
+.modal{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg, rgba(1,1,2,0.45), rgba(0,0,0,0.65));backdrop-filter: blur(2px)}
+.modal.hidden{display:none}
+.modal-card{width:520px;max-width:94%;background:linear-gradient(180deg,#012300 0%, #003201 100%);padding:18px;border-radius:12px;border:2px solid rgba(61, 202, 73, 0.16);text-align:center;box-shadow:0 8px 30px rgba(155,77,255,0.06)}
+.quiz-q{font-size:14px;margin:8px 0 12px}
+.quiz-answers{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
+.quiz-answers button{padding:10px;border-radius:8px;border:2px solid rgba(0,0,0,0.2);background:linear-gradient(180deg,#285a32,#00b212);color:#fff;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,0.25);transition:transform .14s ease}
+.quiz-answers button:hover{transform:translateY(-4px)}
+.btn{background:linear-gradient(90deg,var(--neon),#00ff51);color:#fff;padding:8px 12px;border-radius:8px;border:none;cursor:pointer;font-weight:700;margin-top:6px;box-shadow:0 8px 24px rgba(155,77,255,0.12)}
+.btn.subtle{background:linear-gradient(90deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border:1px solid rgba(255,255,255,0.03);color:#ddd}
+.modal-row{margin-top:8px}
+.shop-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:10px}
+.shop-item{background:rgba(255,255,255,0.03);padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.03)}
+.hidden{display:none}
+
+/* certificate download link style */
+#certDownload{display:inline-block;margin-top:10px;color:var(--accent);font-weight:700}
+input[type="text"]{border-radius:8px;padding:8px;border:2px solid rgba(0,0,0,0.15);background:rgba(255,255,255,0.02);color:#fff}
+
+/* small */
+@media(max-width:760px){
+  #wrapper{width:96%}
+  .modal-card{width:92%}
+  .hud-row{font-size:11px}
+}
+
+    </style>
+</head>
+<body>
+ <!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>PAHLAWAN PEMBASMI SAMPAH</title>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="wrapper">
+    <canvas id="canvas" width="1080" height="640"></canvas>
+
+    <!-- HUD -->
+    <div id="hud">
+      <div id="info-left">
+        <div class="hud-row">HP: <span id="hp">5</span></div>
+        <div class="hud-row">XP: <span id="xp">0</span></div>
+        <div class="hud-row">Level: <span id="level">1</span></div>
+      </div>
+      <div id="title">PAHLAWAN PEMBASMI SAMPAH</div>
+      <div id="info-right">
+        <div class="hud-row">Score: <span id="score">0</span></div>
+        <div class="hud-row">Crystals: <span id="crystals">0</span></div>
+        <div class="hud-row">Shield: <span id="shield">0</span></div>
+      </div>
+    </div>
+
+    <div id="controls">Move: WASD / Arrows • Shoot: Space • Pause/Shop: P • Quiz: click jawaban</div>
+
+    <!-- Quiz modal -->
+    <div id="quizModal" class="modal hidden" aria-hidden="true">
+      <div class="modal-card" role="dialog" aria-labelledby="quizTitle">
+        <h2 id="quizTitle">PERTANYAAN SEPUTAR KEBERSIHAN</h2>
+        <p id="quizQuestion" class="quiz-q">...</p>
+        <div id="quizAnswers" class="quiz-answers"></div>
+        <div class="modal-row" style="display:flex;gap:8px;justify-content:center">
+          <button id="quizSkip" class="btn">Skip (-1 HP)</button>
+          <button id="quizClose" class="btn subtle">Tutup</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Explanation modal (after answering) -->
+    <div id="explainModal" class="modal hidden" aria-hidden="true">
+      <div class="modal-card">
+        <h2 id="explainTitle">PENJELASAN</h2>
+        <p id="explainText" style="line-height:1.4"></p>
+        <div style="margin-top:12px;display:flex;gap:8px;justify-content:center">
+          <button id="explainContinue" class="btn">Lanjutkan</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pause / Shop modal -->
+    <div id="shopModal" class="modal hidden" aria-hidden="true">
+      <div class="modal-card">
+        <h2>SHOP</h2>
+        <p>Score: <strong id="shopScore">0</strong></p>
+        <div class="shop-grid">
+          <div class="shop-item">
+            <div>+1 HP</div>
+            <div>Cost: 200</div>
+            <button data-buy="hp" class="btn shop-buy">Beli</button>
+          </div>
+          <div class="shop-item">
+            <div>Shield (1 use)</div>
+            <div>Cost: 150</div>
+            <button data-buy="shield" class="btn shop-buy">Beli</button>
+          </div>
+          <div class="shop-item">
+            <div>Double Score (30s)</div>
+            <div>Cost: 300</div>
+            <button data-buy="double" class="btn shop-buy">Beli</button>
+          </div>
+          <div class="shop-item">
+            <div>Weapon Upgrade</div>
+            <div>Cost: 400</div>
+            <button data-buy="weapon" class="btn shop-buy">Beli</button>
+          </div>
+        </div>
+        <div style="margin-top:10px;display:flex;justify-content:center;gap:8px">
+          <button id="certBtn" class="btn subtle">Generate Certificate</button>
+          <button id="closeShop" class="btn">Kembali</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Certificate modal -->
+    <div id="certModal" class="modal hidden" aria-hidden="true">
+      <div class="modal-card">
+        <h2>Generate Certificate</h2>
+        <p>Masukkan nama (untuk sertifikat):</p>
+        <input id="certName" type="text" placeholder="Nama Pemain" style="width:80%;padding:8px;border-radius:8px;border:none;margin-top:6px">
+        <div style="margin-top:10px;display:flex;gap:8px;justify-content:center">
+          <button id="makeCert" class="btn">Buat Sertifikat</button>
+          <button id="closeCert" class="btn subtle">Batal</button>
+        </div>
+        <a id="certDownload" class="hidden" download="certificate.png">Download Sertifikat</a>
+      </div>
+    </div>
+
+    <!-- Game over screen -->
+    <div id="gameOver" class="modal hidden" aria-hidden="true">
+      <div class="modal-card">
+        <h1>GAME OVER</h1>
+        <p id="finalScore">Score: 0</p>
+        <div style="display:flex;gap:8px;justify-content:center;margin-top:10px">
+          <button id="restartBtn" class="btn">Main Lagi</button>
+          <button id="goShop" class="btn subtle">Ke Shop / Sertifikat</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="quiz.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>
+
+  <script>
+    // canvas setup
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const W = canvas.width, H = canvas.height;
+
+// HUD elements
+const hpEl = document.getElementById('hp');
+const xpEl = document.getElementById('xp');
+const levelEl = document.getElementById('level');
+const scoreEl = document.getElementById('score');
+const crystalsEl = document.getElementById('crystals');
+const shieldEl = document.getElementById('shield');
+
+// Modal / UI
+const quizModal = document.getElementById('quizModal');
+const quizQuestion = document.getElementById('quizQuestion');
+const quizAnswers = document.getElementById('quizAnswers');
+const quizSkip = document.getElementById('quizSkip');
+const quizClose = document.getElementById('quizClose');
+
+const explainModal = document.getElementById('explainModal');
+const explainText = document.getElementById('explainText');
+const explainContinue = document.getElementById('explainContinue');
+
+const shopModal = document.getElementById('shopModal');
+const shopScore = document.getElementById('shopScore');
+const closeShopBtn = document.getElementById('closeShop');
+const shopBuys = document.querySelectorAll('.shop-buy');
+
+const certModal = document.getElementById('certModal');
+const certBtn = document.getElementById('certBtn');
+const certName = document.getElementById('certName');
+const makeCert = document.getElementById('makeCert');
+const certDownload = document.getElementById('certDownload');
+const closeCert = document.getElementById('closeCert');
+
+const gameOverModal = document.getElementById('gameOver');
+const finalScoreEl = document.getElementById('finalScore');
+const restartBtn = document.getElementById('restartBtn');
+const goShop = document.getElementById('goShop');
+
+// Input
+let keys = {};
+let frame = 0;
+let rng = (n)=>Math.random()*n;
+
+// Loop guard
+let rafId = null;
+function startLoop(){
+  if(rafId) return;
+  rafId = requestAnimationFrame(loop);
+}
+function stopLoop(){
+  if(rafId) cancelAnimationFrame(rafId);
+  rafId = null;
+}
+
+// Game state
+let GAME = {
+  running: false,
+  level: 1,
+  score: 0,
+  crystals: 0,
+  xp: 0,
+  hp: 5,
+  shield: 0,
+  doubleScoreUntil: 0,
+  weaponLevel: 1,
+  correctAnswers: 0,
+  totalAnswers: 0
+};
+
+// Entities
+let player;
+let bullets = [], enemies = [], items = [], boss = null;
+
+// Utility
+function clamp(v,a,b){ return Math.max(a,Math.min(b,v)); }
+function rectColl(a,b){ return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y; }
+
+// Player
+class Player {
+  constructor() {
+    this.w = 87;
+    this.h = 77;
+    this.x = 80;
+    this.y = H / 2 - this.h / 2;
+    this.speed = 4.2;
+    this.cooldown = 0;
+
+    // 🔹 Load gambar pesawat pemain
+    this.img = new Image();
+    this.img.src = "https://i.imgur.com/CARyGbh.png"; // ganti pake URL gambar player lu
+  }
+
+  draw() {
+    if (this.img.complete) {
+      // gambar player
+      ctx.drawImage(this.img, this.x, this.y, this.w, this.h);
+    } 
+  }
+
+  update() {
+    if (keys["ArrowUp"] || keys["w"]) this.y -= this.speed;
+    if (keys["ArrowDown"] || keys["s"]) this.y += this.speed;
+    if (keys["ArrowLeft"] || keys["a"]) this.x -= this.speed;
+    if (keys["ArrowRight"] || keys["d"]) this.x += this.speed;
+
+    this.x = clamp(this.x, 25, W - this.w - 25);
+    this.y = clamp(this.y, 25, H - this.h - 25);
+    if (this.cooldown > 0) this.cooldown--;
+  }
+
+  shoot() {
+    if (this.cooldown > 0) return;
+    const wl = GAME.weaponLevel;
+    const speed = 8 + wl * 1.5;
+    if (wl === 1) {
+      bullets.push({
+        x: this.x + this.w,
+        y: this.y + this.h / 2 - 2,
+        w: 8,
+        h: 4,
+        vx: speed,
+        dmg: 1,
+      });
+    } else if (wl === 2) {
+      bullets.push({
+        x: this.x + this.w,
+        y: this.y + 6,
+        w: 8,
+        h: 4,
+        vx: speed,
+        dmg: 1,
+      });
+      bullets.push({
+        x: this.x + this.w,
+        y: this.y + this.h - 10,
+        w: 8,
+        h: 4,
+        vx: speed,
+        dmg: 1,
+      });
+    } else {
+      bullets.push({
+        x: this.x + this.w,
+        y: this.y + this.h / 2 - 2,
+        w: 12,
+        h: 6,
+        vx: speed + 2,
+        dmg: 2,
+      });
+    }
+    this.cooldown = Math.max(8 - wl * 2, 4);
+  }
+}
+
+// Enemy / Item classes (unchanged)
+class Enemy {
+  constructor(x, y, w, h, speed, hp, type = 'alien') {
+    this.x = x;
+    this.y = y;
+    this.w = w;
+    this.h = h;
+    this.vx = -speed;
+    this.hp = hp;
+    this.type = type;
+
+    // 🔹 Gambar berdasarkan tipe
+    this.img = new Image();
+    if (this.type === 'boss') {
+      this.img.src = "https://i.imgur.com/wSUFqGp.jpeg"; // Bot boss
+    } else {
+      this.img.src = "https://i.imgur.com/tZwNbUb.jpeg"; // Bot alien
+    }
+  }
+
+  update() {
+    this.x += this.vx;
+
+    // efek goyang cuma buat "asteroid" (tapi tampilannya alien)
+    if (this.type === 'asteroid') {
+      this.y += Math.sin(this.x / 30) * 0.7;
+    }
+  }
+
+  draw() {
+    if (this.img.complete) {
+      ctx.drawImage(this.img, this.x, this.y, this.w, this.h);
+    } 
+
+    // teks tambahan khusus boss
+    if (this.type === 'boss') {
+      ctx.fillStyle = '#fff';
+      ctx.font = '12px monospace';
+      ctx.fillText('BOSS', this.x + 8, this.y + 18);
+    }
+  }
+}
+
+class Item {
+  constructor(x, y) {
+    this.x = x;
+    this.y = y;
+    this.w = 29;
+    this.h = 29;
+    this.vx = -2;
+
+    // 🔹 Load gambar dari URL
+    this.img = new Image();
+    this.img.src = "https://i.imgur.com/9PsKm9Q.jpeg"; // ganti URL-nya bro
+  }
+
+  update() {
+    this.x += this.vx;
+    this.y += Math.sin(this.x / 50) * 0.4;
+  }
+
+  draw() {
+    if (this.img.complete) {
+      // kalau gambar udah ke-load, gambar pake drawImage
+      ctx.drawImage(this.img, this.x, this.y, this.w, this.h);
+    } 
+  }
+}
+
+// Boss spawner
+function spawnBossForLevel(level){
+  const b = new Enemy(W-220, H/2 - 90, 180, 180, 0.8, 60 + level*40, 'boss');
+  b.vx = -0.6;
+  b.hp = Math.floor(80 + level*60);
+  b.shootTimer = 0;
+  return b;
+}
+
+// Safe start / reset
+function startGame(){
+  player = new Player();
+  bullets = []; enemies = []; items = []; boss = null;
+  frame = 0;
+  GAME = {
+    running: true, level:1, score:0, crystals:0, xp:0, hp:5, shield:0,
+    doubleScoreUntil:0, weaponLevel:1, correctAnswers:0, totalAnswers:0
+  };
+  updateHUD();
+  // ensure loop runs
+  startLoop();
+}
+
+// spawn rules
+function spawnRateForLevel(level){ return Math.max(0.006 + level*0.002, 0.02); }
+function maybeSpawn(){
+  if(Math.random() < 0.006 + GAME.level*0.0015) items.push(new Item(W+20, 40 + Math.random()*(H-120)));
+  const r = Math.random();
+  if(r < spawnRateForLevel(GAME.level)){
+    const nn = (Math.random()>0.85) ? 'asteroid' : 'alien';
+    const y = 20 + Math.random()*(H-60);
+    const speed = 1.6 + GAME.level*0.35 + Math.random()*1.2;
+    const hp = 1 + Math.floor(GAME.level/2);
+    enemies.push(new Enemy(W+30, y, 34, 28, speed, hp, nn));
+  }
+}
+
+// Quiz: open modal with safe loop stop
+let currentQuizCallback = null;
+function openQuiz(onFinish){
+  // pause loop safely
+  GAME.running = false;
+  stopLoop();
+  currentQuizCallback = onFinish;
+  const q = getRandomQuiz();
+  quizQuestion.textContent = q.q;
+  quizAnswers.innerHTML = '';
+  // create shuffled options with mapping to original index
+  const opts = q.options.map((o,i)=>({o,i})).sort(()=>Math.random()-0.5);
+  opts.forEach(item=>{
+    const btn = document.createElement('button');
+    btn.textContent = item.o;
+    btn.onclick = ()=>{
+      // determine if chosen original index equals q.answer
+      const chosenIndex = item.i;
+      const correctIndex = q.answer;
+      const correct = (chosenIndex === correctIndex);
+      handleQuizResult(correct, q.explain);
+    };
+    quizAnswers.appendChild(btn);
+  });
+  quizSkip.onclick = ()=>{ handleQuizResult(false, q.explain, true); };
+  quizClose.onclick = ()=>{ quizModal.classList.add('hidden'); resumeAfterModal(); };
+  quizModal.classList.remove('hidden');
+}
+
+// handle results: show explanation then resume
+function handleQuizResult(correct, explanation, skipped=false){
+  // hide quiz UI
+  quizModal.classList.add('hidden');
+
+  // update stats
+  GAME.totalAnswers++;
+  if(correct){ GAME.correctAnswers++; GAME.score += (Date.now() < GAME.doubleScoreUntil ? 200 : 100); GAME.xp += 10; GAME.crystals += 1; if(Math.random() < 0.12) GAME.shield++; }
+  else { if(skipped) GAME.hp = Math.max(0, GAME.hp - 1); else GAME.hp = Math.max(0, GAME.hp - 1); }
+
+  // show explanation panel always
+  explainText.textContent = explanation || "Info tidak tersedia.";
+  explainModal.classList.remove('hidden');
+
+  // update HUD to reflect immediate changes
+  updateHUD();
+  // ensure resume after explanation closed
+  explainContinue.onclick = ()=> {
+    explainModal.classList.add('hidden');
+    resumeAfterModal();
+    if(currentQuizCallback) currentQuizCallback();
+    currentQuizCallback = null;
+  };
+}
+
+// resume helper
+function resumeAfterModal(){
+  // resume game and loop
+  GAME.running = true;
+  startLoop();
+}
+
+// Shop open/close (safe)
+function openShop(){
+  GAME.running = false;
+  stopLoop();
+  shopScore.textContent = GAME.score;
+  shopModal.classList.remove('hidden');
+}
+function closeShop(){
+  shopModal.classList.add('hidden');
+  resumeAfterModal();
+}
+shopBuys.forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    const key = btn.dataset.buy;
+    if(key === 'hp' && GAME.score >= 200){ GAME.score-=200; GAME.hp+=1; }
+    else if(key === 'shield' && GAME.score >=150){ GAME.score-=150; GAME.shield+=1; }
+    else if(key === 'double' && GAME.score >=300){ GAME.score-=300; GAME.doubleScoreUntil = Date.now() + 30*1000; }
+    else if(key === 'weapon' && GAME.score >=400){ GAME.score-=400; GAME.weaponLevel = Math.min(3, GAME.weaponLevel+1); }
+    shopScore.textContent = GAME.score; updateHUD();
+  });
+});
+closeShopBtn.addEventListener('click', closeShop);
+
+// Certificate UI
+certBtn.addEventListener('click', ()=>{
+  shopModal.classList.add('hidden');
+  certModal.classList.remove('hidden');
+});
+closeCert.addEventListener('click', ()=>{
+  certModal.classList.add('hidden');
+  resumeAfterModal();
+});
+makeCert.addEventListener('click', ()=>{
+  const name = (certName.value || 'Player').trim();
+  const accuracy = GAME.totalAnswers ? Math.round((GAME.correctAnswers / GAME.totalAnswers) * 100) : 0;
+  const textScore = GAME.score;
+  // create certificate canvas
+  const c = document.createElement('canvas');
+  c.width = 1200; c.height = 800;
+  const cctx = c.getContext('2d');
+  // background
+  cctx.fillStyle = '#002005ff'; cctx.fillRect(0,0,c.width,c.height);
+  // nebula gradient
+  const g = cctx.createLinearGradient(0,0,c.width,c.height);
+  g.addColorStop(0,'#003313ff'); g.addColorStop(1,'#16001f');
+  cctx.fillStyle = g; cctx.globalAlpha = 0.85; cctx.fillRect(0,0,c.width,c.height); cctx.globalAlpha = 1;
+  // title
+  cctx.fillStyle = '#fff'; cctx.font = '42px monospace'; cctx.textAlign='center';
+  cctx.fillText('CERTIFICATE OF PAHLAWAN PEMBASMI SAMPAH', c.width/2, 140);
+  // name
+  cctx.fillStyle = '#4dff88ff'; cctx.font = '56px monospace';
+  cctx.fillText(name, c.width/2, 260);
+  // details box
+  cctx.fillStyle = 'rgba(255,255,255,0.04)'; cctx.fillRect(160,330, c.width-320, 260);
+  cctx.fillStyle = '#fff'; cctx.font = '20px monospace'; cctx.textAlign='left';
+  cctx.fillText(`Score: ${textScore}`, 200, 380);
+  cctx.fillText(`Level reached: ${GAME.level}`, 200, 420);
+  cctx.fillText(`Quiz accuracy: ${accuracy}% (${GAME.correctAnswers}/${GAME.totalAnswers})`, 200, 460);
+  const date = new Date().toLocaleDateString();
+  cctx.fillText(`Date: ${date}`, 200, 500);
+  // footer & signature
+  cctx.fillStyle = '#fff'; cctx.font = '18px monospace'; cctx.textAlign='center';
+  cctx.fillText('Space Adventure — Educational Game', c.width/2, c.height-80);
+  // export
+  const dataURL = c.toDataURL('image/png');
+  certDownload.href = dataURL;
+  certDownload.classList.remove('hidden');
+  certDownload.download = `certificate_${name.replace(/\s+/g,'_')}.png`;
+  certDownload.textContent = 'Download Sertifikat PNG';
+  // give user link visible
+  // keep modal open for download; user can close
+});
+
+// Game over handling
+function gameOver(){
+  finalScoreEl.textContent = 'Score: ' + GAME.score;
+  gameOverModal.classList.remove('hidden');
+}
+restartBtn.addEventListener('click', ()=>{
+  gameOverModal.classList.add('hidden');
+  startGame();
+});
+goShop.addEventListener('click', ()=>{
+  gameOverModal.classList.add('hidden');
+  openShop();
+});
+
+// Input events
+window.addEventListener('keydown', (e)=>{
+  keys[e.key] = true;
+  if(e.key === ' '){
+    player.shoot();
+  }
+  if(e.key === 'p' || e.key === 'P'){
+    if(!shopModal.classList.contains('hidden')) closeShop();
+    else openShop();
+  }
+  if(e.key === 'Escape'){
+    // simple pause toggle
+    if(rafId){ stopLoop(); GAME.running = false; }
+    else { GAME.running = true; startLoop(); }
+  }
+});
+window.addEventListener('keyup',(e)=>{ keys[e.key]=false; });
+
+// Clicks
+canvas.addEventListener('click', ()=>{ /* reserved for future interactions */ });
+
+// draw & loop
+const stars = Array.from({length:200}, ()=>({x:Math.random()*W,y:Math.random()*H,size:Math.random()*2+0.4,v:Math.random()*0.2+0.02}));
+let warpTimer = 0;
+
+function drawBackground(){
+  const t = (GAME.level%4);
+  const c1 = ['#074f00ff','#003a10ff','#00543fff','#00331cff'][t];
+  const c2 = ['#074f00ff','#003a10ff','#00543fff','#00331cff'][t];
+  const g = ctx.createLinearGradient(0,0,0,H);
+  g.addColorStop(0, c1); g.addColorStop(1, c2);
+  ctx.fillStyle = g; ctx.fillRect(0,0,W,H);
+  for(let s of stars){
+    s.x -= 0.2 + (GAME.level*0.02);
+    if(s.x < 0) { s.x = W + Math.random()*20; s.y = Math.random()*H; }
+    ctx.fillStyle = 'rgba(255,255,255,0.85)'; ctx.fillRect(s.x, s.y, s.size, s.size);
+  }
+}
+function drawForeground(){
+  ctx.save(); ctx.globalAlpha = 0.06;
+  ctx.fillStyle = '#56ff4dff';
+  ctx.beginPath();
+  ctx.ellipse(W-120, 80, 80 + GAME.level*6, 40 + GAME.level*2, 0,0,Math.PI*2);
+  ctx.fill(); ctx.restore();
+}
+
+function updateHUD(){
+  hpEl.textContent = GAME.hp;
+  xpEl.textContent = GAME.xp;
+  levelEl.textContent = GAME.level;
+  scoreEl.textContent = GAME.score;
+  crystalsEl.textContent = GAME.crystals;
+  shieldEl.textContent = GAME.shield;
+}
+
+// main loop
+function loop(){
+  rafId = null; // allow startLoop to reassign
+  if(!GAME.running) { rafId = null; return; }
+  frame++;
+  ctx.clearRect(0,0,W,H);
+  drawBackground();
+  if(warpTimer>0){
+    warpTimer--; const p = 1 - warpTimer/60;
+    ctx.save(); ctx.fillStyle = `rgba(150,60,255,${0.08 + p*0.15})`; ctx.fillRect(0,0,W,H);
+    for(let i=0;i<8;i++){ ctx.strokeStyle = `rgba(255,255,255,${0.02 + p*0.06})`; ctx.beginPath(); ctx.moveTo(W/2,H/2); ctx.lineTo(Math.cos(frame/8 + i)*W, Math.sin(frame/8 + i)*H); ctx.stroke(); }
+    ctx.restore();
+  }
+
+  maybeSpawn();
+
+  // items
+  for(let i=items.length-1;i>=0;i--){
+    items[i].update(); items[i].draw();
+    if(rectColl(items[i], player)){
+      items.splice(i,1);
+      // open quiz, pause world
+      openQuiz(()=>{});
+    } else if(items[i].x + items[i].w < -20) items.splice(i,1);
+  }
+
+  // enemies
+  for(let i=enemies.length-1;i>=0;i--){
+    const e = enemies[i];
+    e.update(); e.draw();
+    if(e.x + e.w < -40) enemies.splice(i,1);
+    if(rectColl(e, player)){
+      if(GAME.shield>0){ GAME.shield--; enemies.splice(i,1); }
+      else { GAME.hp--; enemies.splice(i,1); }
+      updateHUD();
+    }
+  }
+
+  // boss logic
+  if(boss){
+    boss.update(); boss.draw();
+    if(boss.shootTimer <= 0){
+      for(let k=0;k<3;k++){ bullets.push({x:boss.x, y: boss.y + Math.random()*(boss.h-20)+10, w:8, h:4, vx:-4 - GAME.level*0.4, dmg:1, hostile:true}); }
+      boss.shootTimer = Math.max(60 - GAME.level*4, 24);
+    } else boss.shootTimer--;
+    if(rectColl(boss, player)){
+      if(GAME.shield>0){ GAME.shield--; } else { GAME.hp -= 2; }
+      updateHUD();
+    }
+  }
+
+  // bullets
+  for(let i=bullets.length-1;i>=0;i--){
+    const b = bullets[i]; b.x += b.vx;
+    ctx.fillStyle = b.hostile ? '#ffdcaa' : '#000000ff'; ctx.fillRect(b.x,b.y,b.w,b.h);
+    if(b.hostile && rectColl(b, player)){ bullets.splice(i,1); if(GAME.shield>0) GAME.shield--; else GAME.hp--; updateHUD(); continue; }
+    if(!b.hostile){
+      let hit=false;
+      if(boss && rectColl(b, boss)){
+        boss.hp -= b.dmg; bullets.splice(i,1); hit=true;
+        if(boss.hp <= 0){
+          GAME.score += 800 + GAME.level*200; GAME.xp += 50; boss=null;
+          setTimeout(()=> advanceLevel(), 900);
+        }
+      } else {
+        for(let j=enemies.length-1;j>=0;j--){
+          if(rectColl(b, enemies[j])){
+            enemies[j].hp -= b.dmg; bullets.splice(i,1); hit=true;
+            if(enemies[j].hp <= 0){ enemies.splice(j,1); GAME.score += 40 + GAME.level*10; GAME.xp += 5; }
+            break;
+          }
+        }
+      }
+      if(hit){ updateHUD(); continue; }
+    }
+    if(b.x > W + 100 || b.x < -200) bullets.splice(i,1);
+  }
+
+  // player update + draw
+  player.update(); player.draw();
+
+  // small spawn wave
+  if(frame % 240 === 0){ maybeSpawn(); maybeSpawn(); }
+
+  drawForeground();
+  if(!boss && GAME.xp > GAME.level * 40 && Math.random() < 0.003 + GAME.level*0.001) boss = spawnBossForLevel(GAME.level);
+  updateHUD();
+
+  if(GAME.hp <= 0){ GAME.running = false; stopLoop(); gameOver(); return; }
+
+  // schedule next frame
+  startLoop();
+}
+
+// level advancement
+function advanceLevel(){
+  GAME.level++;
+  warpTimer = 60;
+  boss = spawnBossForLevel(GAME.level);
+  GAME.xp += 20;
+  updateHUD();
+}
+
+// start initial game when DOM loaded
+document.addEventListener('DOMContentLoaded', ()=>{
+  player = new Player();
+  updateHUD();
+  startGame();
+});
+
+// helpers for accessibility: ensure any modal close resumes
+// (already called in each close handler above)
+
+  </script>
+
+  <script>
+    // quiz.js — soal bertema luar angkasa + penjelasan
+const QUIZ_BANK = [
+  {
+    q: "Apa yang harus dilakukan sebelum membuang sampah ke tempatnya?",
+    options: ["Mencuci tangan", "Memilah sampah organik & anorganik", "Menyiramnya dengan air", "Membakarnya"],
+    answer: 1,
+    explain: "Sebaiknya sampah dipilah terlebih dahulu antara organik dan anorganik agar mudah didaur ulang dan tidak mencemari lingkungan."
+  },
+  {
+    q: "Sampah organik adalah ...",
+    options: ["Sampah yang bisa membusuk", "Sampah dari plastik", "Sampah dari logam", "Sampah elektronik"],
+    answer: 0,
+    explain: "Sampah organik berasal dari sisa makhluk hidup seperti daun, makanan, dan kulit buah, yang bisa terurai secara alami."
+  },
+  {
+    q: "Apa warna tempat sampah untuk sampah plastik biasanya?",
+    options: ["Hijau", "Kuning", "Biru", "Merah"],
+    answer: 1,
+    explain: "Tempat sampah kuning digunakan untuk sampah anorganik seperti plastik, kaleng, dan botol."
+  },
+  {
+    q: "Daur ulang (recycling) berarti ...",
+    options: ["Membuang sampah ke laut", "Menggunakan ulang bahan bekas menjadi produk baru", "Membakar semua sampah", "Menimbun sampah di tanah"],
+    answer: 1,
+    explain: "Daur ulang adalah proses mengubah barang bekas menjadi produk baru yang bermanfaat, sehingga mengurangi jumlah sampah."
+  },
+  {
+    q: "Apa dampak membuang sampah sembarangan?",
+    options: ["Lingkungan bersih", "Hewan senang", "Banjir dan pencemaran", "Tanaman tumbuh subur"],
+    answer: 2,
+    explain: "Sampah yang dibuang sembarangan bisa menyumbat saluran air, menyebabkan banjir, dan mencemari lingkungan."
+  },
+  {
+    q: "Sampah elektronik (e-waste) termasuk contoh ...",
+    options: ["Sampah organik", "Sampah anorganik", "Sampah rumah tangga biasa", "Sampah makanan"],
+    answer: 1,
+    explain: "Sampah elektronik seperti HP, TV, dan komputer bekas termasuk anorganik karena mengandung logam dan bahan kimia berbahaya."
+  },
+  {
+    q: "Apa yang dimaksud 3R dalam pengelolaan sampah?",
+    options: ["Reduce, Reuse, Recycle", "Remove, Replace, Repair", "Run, Rest, Reset", "Recycle, Refresh, Redo"],
+    answer: 0,
+    explain: "3R berarti Reduce (mengurangi), Reuse (menggunakan kembali), dan Recycle (mendaur ulang) untuk menjaga lingkungan tetap bersih."
+  },
+  {
+    q: "Kenapa penting menjaga kebersihan lingkungan sekolah?",
+    options: ["Agar guru senang", "Agar terlihat rapi", "Agar nyaman, sehat, dan bebas penyakit", "Supaya banyak sampah terkumpul"],
+    answer: 2,
+    explain: "Lingkungan yang bersih mencegah penyakit, membuat suasana belajar nyaman, dan menunjukkan kepedulian terhadap lingkungan."
+  },
+  {
+    q: "Sampah yang bisa dijadikan kompos adalah ...",
+    options: ["Kulit pisang dan daun kering", "Botol plastik", "Kaleng minuman", "Kaca pecah"],
+    answer: 0,
+    explain: "Kulit buah, daun, dan sisa makanan bisa dijadikan kompos karena mudah terurai oleh mikroorganisme."
+  },
+  {
+    q: "Tempat sampah berwarna hijau biasanya digunakan untuk ...",
+    options: ["Sampah plastik", "Sampah logam", "Sampah organik", "Sampah kaca"],
+    answer: 2,
+    explain: "Tempat sampah hijau digunakan untuk sampah organik seperti daun, sisa makanan, dan kulit buah."
+  }
+];
+
+// ambil random soal (copy)
+function getRandomQuiz() {
+  const idx = Math.floor(Math.random() * QUIZ_BANK.length);
+  const data = QUIZ_BANK[idx];
+  // return copy with metadata
+  return { q: data.q, options: data.options.slice(), answer: data.answer, explain: data.explain };
+}
+
+  </script>
+</body>
+</html>
